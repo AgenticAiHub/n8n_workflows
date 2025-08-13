@@ -1,0 +1,466 @@
+{
+  "name": "Reservation Reminder Calls for Restaurant with Twilio",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "66a2f5d5-302a-4e36-ad83-17cf0042caa2",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -560,
+        220
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "id": "8e166f96-2f10-4394-8f3a-23c1c3723985",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -560,
+        40
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "content": "## STEP 1\n\nRegister to Twilio and buy a phone number\n- Set the [text-to-speach](https://console.twilio.com/us1/develop/voice/settings/text-to-speech) language\n- Set the [geo permissions](https://console.twilio.com/us1/develop/voice/settings/geo-permissions)\n- Set up the Twilio node\n- Set up the sender in the field \"From\"",
+        "height": 224,
+        "width": 680
+      },
+      "id": "ffa80091-52a1-4e25-934d-d228e0cdc450",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -600,
+        -420
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Details booking appointment:\nName: {{ $json.NAME }}\nTime: {{ $json.TIME }}\nN. People: {{ $json['N. PEOPLE'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are the secretary of the restaurant \"Bella Napoli\" and your task is to create a conversation for a phone call to remind a customer about their reservation today. You will be provided with the reservation name, time, and number of people.\n\nHere are the details of the reservation:\n<reservation>\nName: {{ $json.NAME }}\nTime: {{ $json.TIME }}\nN. People: {{ $json['N. PEOPLE'] }}\n</reservation>\n\nCreate a polite and friendly conversation for the phone call. The conversation should include:\n1. A greeting and introduction\n2. A reminder of the reservation details (name, time, number of people)\n\nOnly Write the message without any tags.\n\nHere's an example of how your output should be structured:\n\nGood morning, Mr. Paolo. I'm the secretary at Bella Napoli restaurant. I'm calling to remind you of your reservation for today at 8:00 PM for four people. Have a nice day!\n\nRemember to use the provided reservation details in your conversation. Create a natural and friendly message that a real restaurant secretary might have with a customer."
+        }
+      },
+      "id": "6dd4e5ac-c4ff-44ec-bdd1-011b8310561d",
+      "name": "Secretary Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        200,
+        120
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "526a6eab-bd37-4380-8adb-7b2e62a6cbdf",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -100,
+        100
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "id": "e6925ad1-7858-4dba-bb85-639b79117f70",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        680,
+        320
+      ],
+      "webhookId": "05cc7627-e604-4052-a2ec-998a975dd7b6",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "content": "## STEP 2\n- Clone this [Google Sheet](https://docs.google.com/spreadsheets/d/1lQh-199bQe-HKwmVI_6cS-Xv1OiGo1B4-OpR6kbNg7E/edit?usp=sharing)\n- Remember that the Phone field must contain the international prefix without the \"+\" character.",
+        "height": 128,
+        "width": 688
+      },
+      "id": "3be833c2-0329-4e92-a1a1-aef8de7b8ebd",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -600,
+        -160
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## AI-Powered Reservation Reminder Calls with Twilio\n\nThis workflow automates the process of calling customers to **remind them of their booking reservations** using AI-generated messages and a **Twilio** phone number. It can easily be adapted for other venues",
+        "width": 672,
+        "color": 3
+      },
+      "id": "60518078-4fa6-4e81-aa72-76292cbd91a0",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -600,
+        -640
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xINUn_5Ruq24bK4ZvEqg1qjZHO0mMll15tjZEOMnNEA",
+          "mode": "list",
+          "cachedResultName": "Booking appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xINUn_5Ruq24bK4ZvEqg1qjZHO0mMll15tjZEOMnNEA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xINUn_5Ruq24bK4ZvEqg1qjZHO0mMll15tjZEOMnNEA/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "CALLED"
+            },
+            {
+              "lookupColumn": "DATE",
+              "lookupValue": "={{ $now.format('yyyy-LL-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e68ce329-73a9-45ba-affa-404650a0174a",
+      "name": "Get daily reservations",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -320,
+        100
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e7K9JeUvFg2cdP0d",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "call",
+        "from": "+1765896565",
+        "to": "=+{{ $('Get daily reservations').item.json.PHONE }}",
+        "twiml": true,
+        "message": "=<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n  <Say voice=\"alice\" language=\"it-IT\">\n    {{ $json.output }}\n  </Say>\n</Response>\n",
+        "options": {}
+      },
+      "id": "655f4973-7e8a-4ddb-8304-1ad3c955909d",
+      "name": "Make a call",
+      "type": "n8n-nodes-base.twilio",
+      "position": [
+        680,
+        120
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "twilioApi": {
+          "id": "UJ64OkeLTqXHVn9R",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1lQh-199bQe-HKwmVI_6cS-Xv1OiGo1B4-OpR6kbNg7E",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lQh-199bQe-HKwmVI_6cS-Xv1OiGo1B4-OpR6kbNg7E/edit?usp=drivesdk",
+          "cachedResultName": "Booking appointments"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lQh-199bQe-HKwmVI_6cS-Xv1OiGo1B4-OpR6kbNg7E/edit#gid=0",
+          "cachedResultName": "Foglio1"
+        },
+        "columns": {
+          "value": {
+            "CALLED": "x",
+            "row_number": "={{ $('Get daily reservations').item.json.row_number }}"
+          },
+          "schema": [
+            {
+              "id": "DATE",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "DATE",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TIME",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "TIME",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NAME",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "NAME",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "N. PEOPLE",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "N. PEOPLE",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PHONE",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "PHONE",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CALLED",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "CALLED",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "type": "number",
+              "display": true,
+              "removed": false,
+              "readOnly": true,
+              "required": false,
+              "displayName": "row_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "row_number"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0ba28743-7191-4fc5-9411-a4d1e68b455b",
+      "name": "Update reservation",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        360,
+        320
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e7K9JeUvFg2cdP0d",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4",
+        "options": {}
+      },
+      "id": "6e30454b-0e47-4bdc-8076-ba94af26e733",
+      "name": "Grok 4",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "position": [
+        -40,
+        320
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openRouterApi": {
+          "id": "ZlFvSzjuzlH5tCkS",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        220,
+        340
+      ],
+      "id": "b5274110-2fdb-4af4-96cd-99d128277a1a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "guBFMhHgni9rVG9Z",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make a call": {
+      "main": [
+        [
+          {
+            "node": "Update reservation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Secretary Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secretary Agent": {
+      "main": [
+        [
+          {
+            "node": "Make a call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get daily reservations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update reservation": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get daily reservations": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get daily reservations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grok 4": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Secretary Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1d0f7b6b-0b28-4fcd-8010-444de1872872",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b1936b33420b0facb61b246cd239a2c195c2e327ceea8081892252d261a13330"
+  },
+  "id": "riLmPqZvQWvhuFX9",
+  "tags": []
+}

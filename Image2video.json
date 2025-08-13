@@ -1,0 +1,311 @@
+{
+  "name": "Image2video",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 3,
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "de8b5738-a8fd-4c7a-98b6-84ce9af30543",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "2ea9e836-60a4-46c6-bd5a-8abdd5c6e091",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10j4ZqDJONKEizSyCeiAdiqwNNq8sNV2BCjkB6nond7I",
+          "mode": "list",
+          "cachedResultName": "n8nDemo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10j4ZqDJONKEizSyCeiAdiqwNNq8sNV2BCjkB6nond7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10j4ZqDJONKEizSyCeiAdiqwNNq8sNV2BCjkB6nond7I/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        200,
+        0
+      ],
+      "id": "28624a73-25a1-4df3-9938-d11f01c4dda8",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e7K9JeUvFg2cdP0d",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2cc7e6cd-267a-4c86-ba38-00992c2e6925",
+              "name": "data[0].Object",
+              "value": "=[\"{{ $json.data[0].Object }}\",\"{{ $json.data[1].Object }}\",\"{{ $json.data[2].Object }}\",\"{{ $json.data[3].Object }}\",\"{{ $json.data[4].Object }}\",\"{{ $json.data[5].Object }}\",\"{{ $json.data[6].Object }}\"]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        620,
+        0
+      ],
+      "id": "80ad869b-b7ef-4f5c-891f-101f346b797f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"object\": { \"type\": \"string\" },\n    \"caption\": { \"type\": \"string\" }\n  },\n  \"required\": [\"object\", \"caption\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1020,
+        220
+      ],
+      "id": "364397d3-bc97-4e4c-be18-b8cca5079399",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        860,
+        220
+      ],
+      "id": "ebc78d26-38b0-48ff-83e3-b41f1b6eb55b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "guBFMhHgni9rVG9Z",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Objects:  {{ $json.data[0].Object.join(\", \") }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Overview  \nYou are an AI agent that selects unique **fruits** for ASMR-style glass cutting videos.\n## Your Task  \nYou will receive a list of 7 fruits that have already been used.  Your job is to generate **one new fruit** that is **not on that list**, and would look visually compelling if it were made of **glass** and cut with a knife in a close-up ASMR video.\n## Requirements\n- The fruit must **not repeat** any of the 7 provided items.  \n- The fruit must have a **clear, recognizable shape** and be **physically feasible** to cut with a knife (even if it’s made of glass).  \n- Prioritize fruits that would look **aesthetic and interesting** with a translucent, colored glass texture.  \n- Do **not** explain or describe the fruit.\n## Output Format \n Output a JSON object with the following structure:\n{\n\"object\": \"Glass [Object name]\",\n\"caption\": \"Glass [Object name] ASMR\"\n}Replace `[object name]` with the newly generated fruit. Do not include any punctuation or commentary.\n## Example Output \n{\"object\": \"Glass Apple\",\n\"caption\": \"Glass Apple ASMR\"}\n        }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        840,
+        0
+      ],
+      "id": "420d8232-7ba8-4c3c-a55e-49d5fcdc7c87",
+      "name": "Idea Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.object }}",
+        "options": {
+          "systemMessage": "=Overview\n\nYou are an AI agent that specializes in generating text-to-video prompts optimized for ASMR-style videos using Google Veo 3. These videos must be 9:16 aspect ratio.\n\nYou will receive the name of a glass object (e.g. \"glass apple\", \"glass mushroom\", \"glass croissant\"). Your task is to generate a hyper-realistic, sensory-rich video prompt of that object being cut in a close-up ASMR scene.\n\nCore Requirements:\nThe video must feel cinematic and photorealistic.\n\nScene is a static, close-up shot of a dark wooden cutting board and a large, heavy steel knife.\n\nCutting must look physically possible — glass should break cleanly, not shatter, with smooth, controlled slices.\n\nThe video starts immediately with the cutting action.\n\nThe object must retain some color (e.g. red glass apple, green glass pear) — not fully transparent — to create visual contrast.\n\nNo humans visible. Only one hand holding the knife, the other stabilizing the object.\n\n-The cut should include four distinct ASMR sound layers:\n\n-The sharp tap of the knife touching the glass\n\n-The smooth, controlled slicing sound through the glass\n\n-The soft thud as the knife hits the board\n\n-The delicate clink as the cut piece lands on the board\n\n-The initial knife-glass contact should sound especially crisp and prominent, like metal striking polished glass.\n\nPrompt Requirements\n\nScene Description: Detail the board material (e.g. walnut), light setup (e.g. soft top-down), and camera style.\n\nObject Detail: Describe the object’s color, shape, texture, and reflective qualities.\n\nCutting Action: Describe the cut from start to finish with a smooth break — no splintering or shattering.\n\nSound Design: Use vivid language to highlight the four-layer audio experience:\n\n-Knife-glass contact\n\n-The clean slice through colored glass\n\n-The thud of knife on wood\n\n-The glass piece gently hitting the board\n\nAmbience: Total silence except for cutting sounds. No music, talking, or background noise.\n\nFormat Output Like This:\n\nSubject: A hyper-detailed [glass object] resting on a dark wooden cutting board.\nSetting: Static close-up, soft natural lighting, minimal background.\nAction: A large steel knife slowly slices through the [glass object], breaking it into perfect segments with a deliberate, cinematic cut.\nStyle: Cinematic ASMR realism, photorealistic lighting and textures.\nSound: Four high-fidelity sound layers in each cut — (1) ultra high definition sound as the knife makes contact with the glass, (2) a clean, smooth slicing sound, (3) a muted wooden thud, and (4) a precise clink as each piece lands. The initial tap should be especially sharp and prominent, emphasizing the contact of steel on glass. No other audio.\nCamera Motion: Fixed camera with slight focus shifts during movement.\nComposition: Centered object, knife enters from edge.\nAmbiance: Pin-drop silence around the cutting sounds.\nAspect Ratio: Always 9:16\n\nMake the viewer feel immersed — like they can hear and feel every slice. Visually surreal, physically satisfying."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        40,
+        440
+      ],
+      "id": "76d44950-2ac0-4396-926e-1e7e4165bc15",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/veo3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.output.replace(/\\n/g, '').replace(/\\*/g, '') }}"
+            },
+            {
+              "name": "generate_audio",
+              "value": "true"
+            },
+            {
+              "name": "aspect_ratio",
+              "value": "9:16"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        440
+      ],
+      "id": "d30d8472-526e-47de-bf79-ffc64357ac43",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H9QwQBVhzcrsFj6w",
+          "name": "Supabase_key"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idea Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5a197b58-057f-4006-8bf5-314a9329033d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b1936b33420b0facb61b246cd239a2c195c2e327ceea8081892252d261a13330"
+  },
+  "id": "Drt9HCxOZ50fNZlO",
+  "tags": []
+}

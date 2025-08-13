@@ -1,0 +1,640 @@
+{
+  "name": "Small_Business_Analizer",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "search",
+        "subreddit": "smallbusiness",
+        "keyword": "={{ $('Edit Fields').first().json.query }}",
+        "limit": 10,
+        "additionalFields": {
+          "sort": "hot"
+        }
+      },
+      "id": "57e522e0-46b2-461d-b7de-a94fdb300674",
+      "name": "Reddit",
+      "type": "n8n-nodes-base.reddit",
+      "position": [
+        -2000,
+        260
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "number": [
+            {
+              "name": "upvotes",
+              "value": "={{ $json.ups }}"
+            },
+            {
+              "name": "subredditSize",
+              "value": "={{ $json.subreddit_subscribers }}"
+            }
+          ],
+          "string": [
+            {
+              "name": "originalPost",
+              "value": "={{ $json.selftext }}"
+            },
+            {
+              "name": "subreddit",
+              "value": "={{ $json.subreddit }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ DateTime.fromSeconds($json.created).toLocaleString() }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7b26ced0-10fc-4d59-9475-66e92e06e4cb",
+      "name": "Set",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -1180,
+        420
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.ups }}",
+              "operation": "largerEqual",
+              "value2": "=2"
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{ $json.selftext }}",
+              "operation": "isNotEmpty"
+            }
+          ],
+          "dateTime": [
+            {
+              "value1": "={{ DateTime.fromSeconds($json.created).toISO() }}",
+              "value2": "={{ $today.minus({days: 180}).toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "95079d25-13fe-425d-95ba-691795e411b5",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -1800,
+        500
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {
+          "fuzzyCompare": false,
+          "includeUnpaired": true
+        }
+      },
+      "id": "a0b78eb7-45d2-41c0-8b1b-d19cc88404f8",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        -660,
+        480
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f8f34cc9-37db-483b-b73a-faa65a6019a4",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -1160,
+        200
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "gY6PjeAPebnI6rkn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9ababf7b-4d85-4d5d-854b-6f0db81ea88b",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f573f68a-f187-4c37-96c2-cb8adcbebf13",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -440,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6e7386ff-a26f-4a29-a476-89a1b39be1b8",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        160
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "gY6PjeAPebnI6rkn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "236c6f2d-f4e4-441a-955e-4f48d51e5ff7",
+      "name": "Limit",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1420,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4a28c635-d1fb-42cb-829a-0a8de2db49f3",
+      "name": "Summarization Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "id": "c4bc9bec-cb5a-4765-9a58-d0f65475b81c",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        340,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $('Edit Fields').first().json.session_id }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ { \"type\": \"ai\", \"content\": `Summary of post for inspiration: ${$json.response.text}\\n\\n${$json.message.content}`, \"data\": {}, \"additional_kwargs\": {}, \"response_metadata\": {} } }}"
+            }
+          ]
+        }
+      },
+      "id": "b1f89237-ad0f-4a8b-ace7-7c4eb53dce1d",
+      "name": "Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        560,
+        480
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "P5TtTfpF3fgb1FZB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true\n}",
+        "options": {}
+      },
+      "id": "cfb87ac3-95ad-49ee-bebc-35d1b9006cd2",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $json.session_id }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ {\n\"type\": \"human\",\n\"content\": $json.query,\n\"additional_kwargs\": {},\n\"response_metadata\": {}\n} }}"
+            }
+          ]
+        }
+      },
+      "id": "0c551597-029f-46ce-a605-6d23c58bd1fe",
+      "name": "Supabase2",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2200,
+        500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "P5TtTfpF3fgb1FZB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ee2bcd57-3b4c-43f9-b4b7-3a25687b9a68",
+              "name": "query",
+              "value": "={{ $json.body.query }}",
+              "type": "string"
+            },
+            {
+              "id": "63f23e51-af2b-47c4-a288-5abaf9b6c357",
+              "name": "user_id",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b97a3670-8a87-481b-8695-db44624be7d8",
+              "name": "request_id",
+              "value": "={{ $json.body.request_id }}",
+              "type": "string"
+            },
+            {
+              "id": "7d3fa06d-08f7-4517-b9c5-3c46ff476f55",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9014e596-9df9-4c69-85b9-d0bdc355d0a0",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2400,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "=Decide whether this Reddit post is describing a business-related problem or a need for a solution. The post should mention a specific challenge or requirement that a business is trying to address.\n\nReddit Post: {{ $json.originalPost }}\n\nIs this post about a business problem or need for a solution? output only Yes or No",
+        "options": {}
+      },
+      "id": "03854a94-37c6-459f-98d7-5fa3832a040d",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -980,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Based on the following Reddit post, suggest a business idea or service that I could create to help solve this problem for this business and others with similar needs. The solution must relate to the topic of {{ $('Edit Fields').first().json.query }}\n\nReddit Post: \"{{ $json.originalPost }}\"\n\nProvide a concise description of a business idea or service that would address this issue effectively for multiple businesses facing similar challenges.\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6c4d84f7-ae7c-497d-99d1-c5adcce37ded",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        -120,
+        320
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "gY6PjeAPebnI6rkn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoke-business-idea-researcher",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2cbd916f-f32f-4635-be1e-43d939219c09",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2620,
+        500
+      ],
+      "webhookId": "ba5e9235-01af-47f8-9f72-29df862bfa0f",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H9QwQBVhzcrsFj6w",
+          "name": "Supabase_key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Reddit Small Business Researcher\n\nAuthor: Vishwas Raut\n\nAn n8n-powered agent that researches small business ideas by analyzing Reddit discussions from r/smallbusiness. It helps validate business concepts by finding relevant experiences, challenges, and insights from real business owners.\n\n## Features\n\n- Searches r/smallbusiness for relevant discussions\n- Filters high-quality posts based on:\n  - Upvotes (minimum of 2)\n  - Post content length\n  - Recent posts (within last 180 days)\n- Uses AI to analyze and summarize findings\n- Provides actionable insights and potential challenges\n",
+        "height": 445.33488372093007,
+        "width": 652.1302325581403,
+        "color": 6
+      },
+      "id": "11a3f8c1-7b45-45f7-9b63-06bfa0b2c24b",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3360,
+        220
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Supabase2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase2": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3ec5cf5b-95cd-44a0-8a48-5f1f920cf66a",
+  "meta": {
+    "instanceId": "b1936b33420b0facb61b246cd239a2c195c2e327ceea8081892252d261a13330"
+  },
+  "id": "lzVOCMyyJIzUqyTv",
+  "tags": []
+}
