@@ -1,0 +1,1047 @@
+{
+  "name": "Scrape business emails from Google Maps",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "cb2e50a8-315b-402c-82d6-339bd5878132",
+      "name": "Remove Duplicate URLs",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "position": [
+        1360,
+        760
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "afbbb335-de65-4d0f-98fe-4d46c05afa50",
+      "name": "Loop over queries",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1060,
+        280
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "url": "=https://www.google.com/maps/search/{{ $json.query }}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "1b46d989-5628-4625-bf6c-0c873ab3860a",
+      "name": "Search Google Maps with query",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        760,
+        760
+      ],
+      "executeOnce": false,
+      "typeVersion": 4.2,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.data\n\nconst regex = /https?:\\/\\/[^\\/]+/g\n\nconst urls = data.match(regex)\n\nreturn urls.map(url => ({json: {url: url}}))"
+      },
+      "id": "56fa2099-1500-48c8-9031-d9739b3fe78d",
+      "name": "Scrape URLs from results",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        960,
+        760
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "041797f2-2fe2-41dc-902a-d34050b9b304",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              },
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "=(google|gstatic|ggpht|schema\\.org|example\\.com|sentry-next\\.wixpress\\.com|imli\\.com|sentry\\.wixpress\\.com|ingest\\.sentry\\.io)"
+            },
+            {
+              "id": "eb499a7e-17bc-453c-be08-a47286f726dd",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7e4edc26-2c34-472d-b38d-75582fcd386d",
+      "name": "Filter irrelevant URLs",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        1160,
+        760
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "6bf1ae1a-51b1-48d7-b431-6f18e16484c3",
+      "name": "Request web page for URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1760,
+        840
+      ],
+      "typeVersion": 4.2,
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "51bef04e-a0ad-452d-925b-6c63c058a27f",
+      "name": "Loop over URLs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1560,
+        760
+      ],
+      "typeVersion": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "54fb54ee-7ed4-40c3-a4bb-8a4dd33365bf",
+      "name": "Loop over pages",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1780,
+        500
+      ],
+      "typeVersion": 3,
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json.data;\n\n// Email regex (skip image extensions like .png, .jpg etc.)\nconst emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.(?!png|jpg|gif|jpeg)[a-zA-Z]{2,}/g;\nconst emails = data.match(emailRegex) || [];\n\n// Mobile number regex (examples: +1 212-555-1234, 2125551234, (212) 555-1234)\nconst phoneRegex = /(?:\\+?\\d{1,3}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s.-]?)?\\d{3,4}[\\s.-]?\\d{3,4}/g;\nconst mobiles = data.match(phoneRegex) || [];\n\nreturn {\n  json: {\n    emails,\n    mobiles\n  }\n};"
+      },
+      "id": "b9b46b42-c73b-4d2f-a91a-d25593f17fb2",
+      "name": "Scrape emails from page",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1940,
+        600
+      ],
+      "typeVersion": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "emails"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "id": "00821f80-e075-4bdc-93ad-a56eec729363",
+      "name": "Aggregate arrays of emails",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        2100,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "emails",
+        "options": {}
+      },
+      "id": "d7da16eb-e9da-4c28-b78d-a55361d5792a",
+      "name": "Split out into default data structure",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        2320,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "emails",
+        "options": {}
+      },
+      "id": "98b683fa-8ea3-4115-bd84-0cbf0d07e4c0",
+      "name": "Remove duplicate emails",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "position": [
+        2540,
+        480
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "041797f2-2fe2-41dc-902a-d34050b9b304",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              },
+              "leftValue": "={{ $json.emails }}",
+              "rightValue": "=(google|gstatic|ggpht|schema\\.org|example\\.com|sentry\\.wixpress\\.com|sentry-next\\.wixpress\\.com|ingest\\.sentry\\.io|sentry\\.io|imli\\.com)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d71dbf11-2443-4e6a-9b77-0bdba3da3dfe",
+      "name": "Filter irrelevant emails",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        2740,
+        480
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10j4ZqDJONKEizSyCeiAdiqwNNq8sNV2BCjkB6nond7I",
+          "mode": "list",
+          "cachedResultName": "clinicMails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10j4ZqDJONKEizSyCeiAdiqwNNq8sNV2BCjkB6nond7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10j4ZqDJONKEizSyCeiAdiqwNNq8sNV2BCjkB6nond7I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Object",
+              "displayName": "Object",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "53ab9066-de58-4d75-83fe-865914d87abc",
+      "name": "Save emails to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        2940,
+        480
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e7K9JeUvFg2cdP0d",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "af66a0b8-cbae-49cb-a5df-4f001ffa087d",
+      "name": "Starts scraper workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        540,
+        760
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "ee15ca4a-608c-402f-b215-cda65bf93b4c",
+      "name": "Run workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        820,
+        280
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "45caa721-5904-48d8-955d-d50cc1623c12",
+      "name": "Wait between executions",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1500,
+        380
+      ],
+      "webhookId": "40eb11a9-0f7d-4932-993e-0052b69dbf9b",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "521dc98f-6945-4c25-b491-317df2cfcfed",
+      "name": "Execute scraper for query",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        1260,
+        380
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "content": "**Optional** 👆\nAdd or change the regex for filtering irrelevant URLs.",
+        "height": 100,
+        "width": 160,
+        "color": 6
+      },
+      "id": "f361bf6f-3566-47f3-9484-bfc596e01671",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1140,
+        920
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {
+    "Run workflow": [
+      {
+        "json": {
+          "query": "deira+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "bur+dubai+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "karama+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "satwa+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "oud+mehta+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "jumeirah+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+barsha+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+nahda+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "mirdif+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+quoz+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+safa+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "umm+suqeim+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "jebel+ali+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "international+city+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "discovery+gardens+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "dubai+marina+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "jlt+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "downtown+dubai+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "business+bay+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "difc+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "dubai+hills+estate+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "damac+hills+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "arabian+ranches+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "meadows+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "springs+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "greens+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "palm+jumeirah+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "bluewaters+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "city+walk+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "culture+village+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "dubai+festival+city+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "nad+al+sheba+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "ras+al+khor+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+warqaa+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+khawaneej+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "muhaisnah+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+twars+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+garhoud+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+jaddaf+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "zabeel+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+hamriya+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+rifa+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+hudaiba+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "umm+hurair+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+barari+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "sobha+hartland+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "emaar+south+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "dubai+south+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "jvc+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "jvt+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+furjan+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "sports+city+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "motor+city+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "impz+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "remraam+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "liwan+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "serena+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "villanova+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "nad+al+hammar+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+khail+gate+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "umm+al+sheif+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+manara+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+wasl+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+badia+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+baraha+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "rigga+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "naif+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+murraqabat+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+quds+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+ras+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+shindagha+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+qiyadah+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "mamzar+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+qusais+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+qusais+industrial+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+twars+second+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+barsha+heights+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "tecom+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "greens+and+views+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+seef+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "lagoon+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "wasl+gate+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "dubai+maritime+city+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+karama+saloon+centre"
+        }
+      },
+      {
+        "json": {
+          "query": "al+barsha+south+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "barsha+heights+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "umm+hurair+second+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+minhad+saloon"
+        }
+      },
+      {
+        "json": {
+          "query": "al+naqaa+saloon"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Run workflow": {
+      "main": [
+        [
+          {
+            "node": "Loop over queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over URLs": {
+      "main": [
+        [
+          {
+            "node": "Loop over pages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request web page for URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over pages": {
+      "main": [
+        [
+          {
+            "node": "Aggregate arrays of emails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Scrape emails from page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over queries": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute scraper for query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicate URLs": {
+      "main": [
+        [
+          {
+            "node": "Loop over URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter irrelevant URLs": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicate URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove duplicate emails": {
+      "main": [
+        [
+          {
+            "node": "Filter irrelevant emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape emails from page": {
+      "main": [
+        [
+          {
+            "node": "Loop over pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Starts scraper workflow": {
+      "main": [
+        [
+          {
+            "node": "Search Google Maps with query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait between executions": {
+      "main": [
+        [
+          {
+            "node": "Loop over queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter irrelevant emails": {
+      "main": [
+        [
+          {
+            "node": "Save emails to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request web page for URL": {
+      "main": [
+        [
+          {
+            "node": "Loop over URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape URLs from results": {
+      "main": [
+        [
+          {
+            "node": "Filter irrelevant URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute scraper for query": {
+      "main": [
+        [
+          {
+            "node": "Wait between executions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate arrays of emails": {
+      "main": [
+        [
+          {
+            "node": "Split out into default data structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google Maps with query": {
+      "main": [
+        [
+          {
+            "node": "Scrape URLs from results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split out into default data structure": {
+      "main": [
+        [
+          {
+            "node": "Remove duplicate emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "11cebfda-50c8-41b4-b626-0a4086ba68b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b1936b33420b0facb61b246cd239a2c195c2e327ceea8081892252d261a13330"
+  },
+  "id": "syV6jnTwY0LMKu2N",
+  "tags": []
+}
