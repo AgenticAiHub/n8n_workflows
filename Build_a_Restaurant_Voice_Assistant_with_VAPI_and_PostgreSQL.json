@@ -1,0 +1,234 @@
+{
+  "name": "Build a Restaurant Voice Assistant with VAPI and PostgreSQL",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9f6b9125-0b75-41c2-87a9-1b6746c89e2e",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "bad2b8ef-e11e-471c-99e7-30901f4ba8da",
+      "name": "Trigger: Voice Request (VAPI)",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        380,
+        360
+      ],
+      "webhookId": "9f6b9125-0b75-41c2-87a9-1b6746c89e2e",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "id"
+        },
+        "columns": {
+          "value": {},
+          "schema": [],
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d9197589-e65e-475a-bc84-2f2dc351f22f",
+      "name": "Update Data (Table Booking / Orders)",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        820,
+        360
+      ],
+      "typeVersion": 2.6
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Trigger: Voice Request (VAPI)').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"{{ $json.status }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "id": "ee6f1e72-91c5-4bb1-8d72-01d6b9124cfc",
+      "name": "Respond: Booking/Order Confirmation (VAPI)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1040,
+        360
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {},
+      "id": "bfd89d91-4067-4d0e-b6aa-04c483793661",
+      "name": "Wait For Response",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        600,
+        360
+      ],
+      "webhookId": "70ef62ba-b15e-48d6-b6ea-031f1ad02176",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {},
+      "id": "5aeb5751-4916-4a1c-b6d6-356f0a762bf6",
+      "name": "Wait For Response1",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        820,
+        620
+      ],
+      "webhookId": "5282819f-e54d-415e-a2a2-384df4b9f71d",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "efe2c13f-1ba5-46e1-9996-57bdc6041973",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "aee2f267-753b-4532-97e4-12bba191aeb5",
+      "name": "Trigger: Info Request (VAPI)",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        380,
+        620
+      ],
+      "webhookId": "efe2c13f-1ba5-46e1-9996-57bdc6041973",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "id"
+        },
+        "options": {}
+      },
+      "id": "74193b29-bc31-472c-9510-549e185f6720",
+      "name": " Get Restaurant Info (Postgres)",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        600,
+        620
+      ],
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "gjG8wTD517edkYlc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"results\": [\n        {\n            \"toolCallId\": \"{{ $('Trigger: Info Request (VAPI)').item.json.body.message.toolCalls[0].id }}\",\n            \"result\":  \"{{ $json.available }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "id": "0dcb12a7-2376-4695-b2ba-a898d7ac08f1",
+      "name": "Respond: Restaurant Details (VAPI)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1040,
+        620
+      ],
+      "typeVersion": 1.2
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait For Response": {
+      "main": [
+        [
+          {
+            "node": "Update Data (Table Booking / Orders)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Response1": {
+      "main": [
+        [
+          {
+            "node": "Respond: Restaurant Details (VAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: Info Request (VAPI)": {
+      "main": [
+        [
+          {
+            "node": " Get Restaurant Info (Postgres)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: Voice Request (VAPI)": {
+      "main": [
+        [
+          {
+            "node": "Wait For Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    " Get Restaurant Info (Postgres)": {
+      "main": [
+        [
+          {
+            "node": "Wait For Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Data (Table Booking / Orders)": {
+      "main": [
+        [
+          {
+            "node": "Respond: Booking/Order Confirmation (VAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d4aed006-0910-4b41-a5b4-da32aa7985d6",
+  "meta": {
+    "instanceId": "b1936b33420b0facb61b246cd239a2c195c2e327ceea8081892252d261a13330"
+  },
+  "id": "0T3472BB1QCvDpoI",
+  "tags": []
+}
