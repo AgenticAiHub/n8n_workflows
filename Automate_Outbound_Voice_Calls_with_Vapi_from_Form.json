@@ -1,0 +1,178 @@
+{
+  "name": "Automate Outbound Voice Calls with Vapi from Form",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Set Vapi fields\nYou must set the following fields that you can obtain inside your Vapi account \n- phone number id which will make the call\n- assistant id which will be enabled in the call\n- your Vapi api key\n\n## Set country code\n- insert the phone number country code. Include the + symbol and no spaces.",
+        "height": 524,
+        "width": 260
+      },
+      "id": "03168729-bbf8-4457-a10a-834814fb5e11",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        40
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.vapiApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"assistantId\": \"{{ $json.vapiAssistantId }}\",\n    \"phoneNumberId\": \"{{ $json.vapiPhoneNumberId }}\",\n    \"customer\": {\n        \"number\": \"{{ $('On form submission').item.json.Phone }}\"\n    }\n}\n",
+        "options": {}
+      },
+      "id": "116c6b87-a0dd-4fbc-ba09-bc19a9b169d8",
+      "name": "Start outbound Vapi call",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        20,
+        420
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f38947e1-c75a-44cc-88f9-c44fc80bada8",
+              "name": "vapiPhoneNumberId",
+              "type": "string",
+              "value": "insert-id"
+            },
+            {
+              "id": "463ed66e-e072-48dc-a75d-a3815fd07de0",
+              "name": "vapiAssistantId",
+              "type": "string",
+              "value": "insert-id"
+            },
+            {
+              "id": "93f058cd-e015-4b83-a16f-efceddafb128",
+              "name": "vapiApi",
+              "type": "string",
+              "value": "insert-api"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cd403b8e-2b24-439f-94d9-e41d700737d3",
+      "name": "Set fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -220,
+        420
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "formTitle": "Lead form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone",
+              "placeholder": "Insert + symbol and country code without spaces",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "69afce66-60a7-4345-aed4-832ea2886907",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -660,
+        420
+      ],
+      "webhookId": "cf168bd9-dd77-4192-aa0e-0c5c5cb3341b",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "id": "12c2494d-216f-4316-8b74-331953d9126b",
+      "name": "Wait 2min",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        -440,
+        420
+      ],
+      "webhookId": "dd4440b8-37f2-4f20-84ad-46a9e107fb82",
+      "typeVersion": 1.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait 2min": {
+      "main": [
+        [
+          {
+            "node": "Set fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set fields": {
+      "main": [
+        [
+          {
+            "node": "Start outbound Vapi call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Wait 2min",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "480a3c54-1b78-4481-8314-dae21bbaafe9",
+  "meta": {
+    "instanceId": "b1936b33420b0facb61b246cd239a2c195c2e327ceea8081892252d261a13330"
+  },
+  "id": "2tht3fVg30CGeESk",
+  "tags": []
+}
